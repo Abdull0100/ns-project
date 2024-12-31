@@ -1,19 +1,14 @@
-import hashlib
-import os
+from pqcrypto.sign.falcon_1024 import generate_keypair, sign, verify
 
-# Generate a password hash
-def hash_password(password: str, salt: bytes = None):
-    salt = salt or os.urandom(16)  # Generate a new salt if not provided
-    password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
-    print(password_hash)
-    return salt, password_hash
+# Generate key pair
+server_public_key, server_private_key = generate_keypair()
 
-# Verify a password
-def verify_password(password: str, salt: bytes, stored_hash: bytes):
-    _, new_hash = hash_password(password, salt)
-    return new_hash == stored_hash
+# Create a signed message
+def sign_auth_message(user_id, otp, private_key):
+    message = f"UserID:{user_id}, OTP:{otp}"
+    signature = sign(message.encode(), private_key)
+    return message, signature
 
-# Example usage
-password = "securepassword123"
-salt, stored_hash = hash_password(password)
-print(verify_password("securepassword123", salt, stored_hash))  # Output: True
+# Verify the signed message
+def verify_auth_message(message, signature, public_key):
+    return verify(message.encode(), signature, public_key)
